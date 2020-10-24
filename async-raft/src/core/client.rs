@@ -295,7 +295,7 @@ impl<'a, D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>
                 }
             },
             ClientOrInternalResponseTx::Internal(tx) => {
-                self.core.last_applied = req.entry.index;
+                self.core.set_last_applied(req.entry.index);
                 self.core.report_metrics();
                 let _ = tx.send(Ok(req.entry.index));
             }
@@ -313,7 +313,7 @@ impl<'a, D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>
         // entry to the state machine.
         //
         // Note that this would only ever happen if a node had unapplied logs from before becoming leader.
-        let expected_next_index = self.core.last_applied + 1;
+        let expected_next_index = self.core.last_applied() + 1;
         if index != &expected_next_index {
             let entries = self
                 .core
@@ -322,7 +322,7 @@ impl<'a, D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>
                 .await
                 .map_err(|err| self.core.map_fatal_storage_error(err))?;
             if let Some(entry) = entries.last() {
-                self.core.last_applied = entry.index;
+                self.core.set_last_applied(entry.index);
             }
             let data_entries: Vec<_> = entries
                 .iter()
@@ -347,7 +347,7 @@ impl<'a, D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>
             .apply_entry_to_state_machine(index, entry)
             .await
             .map_err(|err| self.core.map_fatal_storage_error(err))?;
-        self.core.last_applied = *index;
+        self.core.set_last_applied(*index);
         self.core.report_metrics();
         Ok(res)
     }

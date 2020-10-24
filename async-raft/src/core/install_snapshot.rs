@@ -134,7 +134,7 @@ impl<D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>> Ra
         self.update_membership(membership)?;
         self.last_log_index = req.last_included_index;
         self.last_log_term = req.last_included_term;
-        self.last_applied = req.last_included_index;
+        self.set_last_applied(req.last_included_index);
         self.snapshot_index = req.last_included_index;
         Ok(())
     }

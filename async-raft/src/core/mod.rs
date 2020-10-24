@@ -146,7 +146,7 @@ impl<D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>> Ra
         self.current_term = state.hard_state.current_term;
         self.voted_for = state.hard_state.voted_for;
         self.membership = state.membership;
-        self.last_applied = state.last_applied_log;
+        self.set_last_applied(state.last_applied_log);
         // NOTE: this is repeated here for clarity. It is unsafe to initialize the node's commit
         // index to any other value. The commit index must be determined by a leader after
         // successfully committing a new log to the cluster.
@@ -193,6 +193,14 @@ impl<D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>> Ra
         }
     }
 
+    fn last_applied(&self) -> u64 {
+        self.last_applied
+    }
+
+    fn set_last_applied(&mut self, val: u64) {
+        self.last_applied = val;
+    }
+
     /// Report a metrics payload on the current state of the Raft node.
     #[tracing::instrument(level = "trace", skip(self))]
     fn report_metrics(&mut self) {
@@ -201,7 +209,7 @@ impl<D: AppData, R: AppDataResponse, N: RaftNetwork<D>, S: RaftStorage<D, R>> Ra
             state: self.target_state,
             current_term: self.current_term,
             last_log_index: self.last_log_index,
-            last_applied: self.last_applied,
+            last_applied: self.last_applied(),
             current_leader: self.current_leader,
             membership_config: self.membership.clone(),
         });
